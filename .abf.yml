@@ -1,0 +1,16 @@
+sources:
+  piper-2023.11.14-2.tar.gz: 95554d8c119c0ec902b50533a76b46b82209a5ff
+  de_DE-thorsten-medium.onnx.json: 17c3b5fdca40f661065a5588108cde699d1350b2
+  de_DE-thorsten-medium.onnx: f3cb0b27187ac783e20850321904bb633eb25fc7
+  de_DE-karlsson-low.onnx.json: 8fc721820c79985f24fc0c1c3a24689b80f78db0
+  de_DE-karlsson-low.onnx: af99bb995c6684c55a82618e8e8dd79af672d02a
+  pl_PL-gosia-medium.onnx.json: f2a901a731ef98540f33a8269fa6f372c4ba83dd
+  pl_PL-gosia-medium.onnx: feb8a393f84c822063442408e941b5c19bc01870
+  pl_PL-darkman-medium.onnx.json: 5ca1baa7faf47e62ec85d97d9bd3779322b38d8d
+  pl_PL-darkman-medium.onnx: 90f025737ea3954966df9822203b5ece5f2a8596
+  en_GB-alba-medium.onnx.json: 5164ef9d5da10d639290be335767e3911bcc86ad
+  en_GB-alba-medium.onnx: 1eb036b9bca4c76ad23d184d4433f0b7c9419185
+  en_GB-alan-medium.onnx.json: 9dc36606cdef99ee9dc7c3b52c7085b619cb7032
+  en_GB-alan-medium.onnx: c60e78a708e2834c274bda084736acb54ac04f54
+  en_GB-alan-low.onnx.json: 2d00e67067eb0b14a8b9b13231afad71d03d9a84
+  en_GB-alan-low.onnx: 1113a8b61fd1c9ced3fd3040c504d04510a268cc
