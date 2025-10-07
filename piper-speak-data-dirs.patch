@@ -1,0 +1,12 @@
+diff -up piper1-gpl-main/piper-speak/CMakeLists.txt.omv~ piper1-gpl-main/piper-speak/CMakeLists.txt
+--- piper1-gpl-main/piper-speak/CMakeLists.txt.omv~	2025-10-07 04:49:06.286689131 +0200
++++ piper1-gpl-main/piper-speak/CMakeLists.txt	2025-10-07 04:49:16.394355955 +0200
+@@ -61,7 +61,7 @@ target_link_libraries(${PROJECT_NAME} PR
+ target_link_libraries(${PROJECT_NAME} PRIVATE ${PCAUDIO_LIB})
+ target_compile_definitions(${PROJECT_NAME}
+ 	#tell the code where ESPEAK_NG_DATA is located
+-	PRIVATE -DBUILD_ENV_ESPEAK_NG_DATA=\"${ESPEAK_EN_DATA}\"
++	PRIVATE -DBUILD_ENV_ESPEAK_NG_DATA=\"${ESPEAK_NG_DATA}\"
+ 	#tell the code where the voices are located
+ 	PRIVATE -DBUILD_ENV_VOICES_PATH=\"${VOICES_DIR}\"
+ )

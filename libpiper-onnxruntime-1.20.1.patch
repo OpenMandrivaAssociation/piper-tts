@@ -1,0 +1,19 @@
+diff -up piper1-gpl-main/libpiper/src/piper.cpp.omv~ piper1-gpl-main/libpiper/src/piper.cpp
+--- piper1-gpl-main/libpiper/src/piper.cpp.omv~	2025-10-06 21:42:04.130291065 +0200
++++ piper1-gpl-main/libpiper/src/piper.cpp	2025-10-06 21:46:18.208496182 +0200
+@@ -340,12 +340,13 @@ int piper_synthesize_next(struct piper_s
+                                                "scales", "sid"};
+ 
+     // Get all output names
+-    std::vector<std::string> output_names_strs =
++/*    std::vector<std::string> output_names_strs =
+         synth->session->GetOutputNames();
+     std::vector<const char *> output_names;
+     for (const auto &name : output_names_strs) {
+         output_names.push_back(name.c_str());
+-    }
++    } */
++    std::array<const char *, 1> output_names = {"output"};
+ 
+     // Infer
+     auto output_tensors = synth->session->Run(

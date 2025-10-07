@@ -1,0 +1,13 @@
+diff -up piper1-gpl-main/libpiper/include/json.hpp.omv~ piper1-gpl-main/libpiper/include/json.hpp
+diff -up piper1-gpl-main/libpiper/include/piper_impl.hpp.omv~ piper1-gpl-main/libpiper/include/piper_impl.hpp
+--- piper1-gpl-main/libpiper/include/piper_impl.hpp.omv~	2025-10-05 20:52:59.023586888 +0200
++++ piper1-gpl-main/libpiper/include/piper_impl.hpp	2025-10-05 20:53:08.970231953 +0200
+@@ -1,7 +1,7 @@
+ #ifndef PIPER_IMPL_H_
+ #define PIPER_IMPL_H_
+ 
+-#include "json.hpp"
++#include <nlohmann/json.hpp>
+ #include "uni_algo.h"
+ 
+ #include <map>

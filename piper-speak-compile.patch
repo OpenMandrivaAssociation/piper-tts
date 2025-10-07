@@ -1,0 +1,29 @@
+diff -up piper1-gpl-main/piper-speak/CMakeLists.txt.omv~ piper1-gpl-main/piper-speak/CMakeLists.txt
+--- piper1-gpl-main/piper-speak/CMakeLists.txt.omv~	2025-10-06 22:45:32.396624050 +0200
++++ piper1-gpl-main/piper-speak/CMakeLists.txt	2025-10-06 22:49:56.821079320 +0200
+@@ -4,13 +4,13 @@ project(piper-speak LANGUAGES CXX)
+ 
+ set(SOURCE_FILES piper-speak.cpp audio.cpp)
+ 
+-set(LIBPIPER_DIR ${CMAKE_BINARY_DIR}/../../libpiper/install)
++set(LIBPIPER_DIR ${CMAKE_BINARY_DIR}/../../libpiper/build)
+ 
+ ### set the dependencies as described in ROOT/libpiper/README.md
+-set(PIPER_HEADER ${LIBPIPER_DIR}/include)
++set(PIPER_HEADER ${LIBPIPER_DIR}/../include)
+ #libpiper is inside the root of LIBPIPER_DIR already
+ #so no need for seperate variable
+-set(ONNX_LIB_DIR ${LIBPIPER_DIR}/lib)
++set(ONNX_LIB_DIR /usr/lib64)
+ set(ESPEAK_NG_DATA=${LIBPIPER_DIR}/espeak-ng-data/)
+ 
+ #We also need the path to the voices: the .onnx and the .onnx.json
+@@ -56,7 +56,7 @@ find_path(PCAUDIO_INCLUDE
+ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+ target_include_directories(${PROJECT_NAME} PRIVATE ${PIPER_HEADER})
+ target_include_directories(${PROJECT_NAME} PRIVATE ${PCAUDIO_INCLUDE})
+-target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBPIPER})
++target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBPIPER_DIR}/libpiper.so)
+ target_link_libraries(${PROJECT_NAME} PRIVATE ${ONNXRUNTIME})
+ target_link_libraries(${PROJECT_NAME} PRIVATE ${PCAUDIO_LIB})
+ target_compile_definitions(${PROJECT_NAME}

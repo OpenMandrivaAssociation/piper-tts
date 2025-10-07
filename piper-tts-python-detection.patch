@@ -1,0 +1,22 @@
+diff -up piper-tts-1.3.0/CMakeLists.txt.omv~ piper-tts-1.3.0/CMakeLists.txt
+--- piper-tts-1.3.0/CMakeLists.txt.omv~	2025-10-05 00:45:31.343214948 +0200
++++ piper-tts-1.3.0/CMakeLists.txt	2025-10-05 00:50:59.811032509 +0200
+@@ -7,7 +7,8 @@ project(piper LANGUAGES C CXX)
+ include(ExternalProject)
+ 
+ # scikit-build-core will forward Python_* variables
+-find_package(Python COMPONENTS Development.Module Development.SABIModule REQUIRED)
++find_package(Python REQUIRED)
++include_directories(/usr/include/python3.11)
+ 
+ # Install location for espeak-ng
+ set(ESPEAKNG_BUILD_DIR ${CMAKE_BINARY_DIR}/espeak_ng)
+@@ -59,7 +60,7 @@ add_dependencies(espeakbridge espeak_ng_
+ target_link_libraries(espeakbridge
+     ${ESPEAKNG_STATIC_LIB}
+     ${UCD_STATIC_LIB}
+-    Python::SABIModule
++    python3
+ )
+ target_include_directories(espeakbridge PRIVATE
+     ${ESPEAKNG_INSTALL_DIR}/include

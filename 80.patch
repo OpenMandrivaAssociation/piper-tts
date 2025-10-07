@@ -1,0 +1,463 @@
+From e955847e9381cee73865644354f9f14b76bb3747 Mon Sep 17 00:00:00 2001
+From: ribbon-otter <ribbon-otter@github.invalid>
+Date: Fri, 12 Sep 2025 17:54:11 -0700
+Subject: [PATCH 1/2] piper-speak outputs audio now
+
+There is still a lot of work that need to be done before it is remotely usable.
+However, the core of the build system for piper-speak works, and speech is synthesised. piper-speak.cpp is currently almost a copy and paste from the libpiper README.md example.
+---
+ piper-speak/.gitignore      |  2 ++
+ piper-speak/CMakeLists.txt  | 64 +++++++++++++++++++++++++++++++++++++
+ piper-speak/README.md       | 12 +++++++
+ piper-speak/piper-speak.cpp | 62 +++++++++++++++++++++++++++++++++++
+ 4 files changed, 140 insertions(+)
+ create mode 100644 piper-speak/.gitignore
+ create mode 100644 piper-speak/CMakeLists.txt
+ create mode 100644 piper-speak/README.md
+ create mode 100644 piper-speak/piper-speak.cpp
+
+diff --git a/piper-speak/.gitignore b/piper-speak/.gitignore
+new file mode 100644
+index 0000000..5fc3ba0
+--- /dev/null
++++ b/piper-speak/.gitignore
+@@ -0,0 +1,2 @@
++build
++download
+diff --git a/piper-speak/CMakeLists.txt b/piper-speak/CMakeLists.txt
+new file mode 100644
+index 0000000..f5f698b
+--- /dev/null
++++ b/piper-speak/CMakeLists.txt
+@@ -0,0 +1,64 @@
++#build piper-speak binary
++cmake_minimum_required(VERSION 3.26)
++project(piper-speak LANGUAGES CXX)
++
++set(LIBPIPER_DIR ${CMAKE_BINARY_DIR}/../../libpiper/install)
++
++### set the dependencies as described in ROOT/libpiper/README.md
++set(PIPER_HEADER ${LIBPIPER_DIR}/include)
++#libpiper is inside the root of LIBPIPER_DIR already
++#so no need for seperate variable
++set(ONNX_LIB_DIR ${LIBPIPER_DIR}/lib)
++set(ESPEAK_NG_DATA=${LIBPIPER_DIR}/espeak-ng-data/)
++
++#We also need the path to the voices: the .onnx and the .onnx.json
++set(VOICES_DIR ${CMAKE_BINARY_DIR}/../download/voices)
++
++### With the variables set, we now hook them up to CMAKE
++
++#piper.h header
++include_directories(${PIPER_HEADER})
++
++#link libpiper
++find_library(LIBPIPER
++	NAMES piper
++	PATHS ${LIBPIPER_DIR}
++	NO_DEFAULT_PATH
++)
++
++if(NOT LIBPIPER)
++	message(FATAL_ERROR "Could not find libpiper in ${LIBPIPER_DIR}")
++endif()
++
++#link onnxruntime
++find_library(ONNXRUNTIME
++	NAMES onnxruntime
++	PATHS ${ONNX_LIB_DIR}
++	NO_DEFAULT_PATH
++)
++
++if(NOT ONNXRUNTIME)
++	message(FATAL_ERROR "Could not find onnxruntime in ${ONNX_LIB_DIR}")
++endif()
++
++#tell the code where ESPEAK_NG_DATA is located
++add_definitions(-DBUILD_ENV_ESPEAK_NG_DATA=\"${ESPEAK_EN_DATA}\")
++
++#tell the code where the voices are located
++add_definitions(-DBUILD_ENV_VOICES_PATH=\"${VOICES_DIR}\")
++
++
++### we are done for the most part with the README steps
++
++add_executable(${PROJECT_NAME} piper-speak.cpp)
++target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBPIPER})
++target_link_libraries(${PROJECT_NAME} PRIVATE ${ONNXRUNTIME})
++
++#we use c++17 to get the std::filesystem header
++set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
++
++### We still need to download a voice to use
++file(MAKE_DIRECTORY download/voices)
++message(NOTICE "Currently you must manually download a .onnx file and the corresponding .json file and place them in download/voices")
++set(VOICES_URL "https://huggingface.co/rhasspy/piper-voices/tree/main")
++message(STATUS "look ${VOICES_URL} for voices")
+diff --git a/piper-speak/README.md b/piper-speak/README.md
+new file mode 100644
+index 0000000..1bd958b
+--- /dev/null
++++ b/piper-speak/README.md
+@@ -0,0 +1,12 @@
++# piper-speak
++piper-speak targets being a close replacement for espeak but with nicer sounding voices. It is based on libpiper and thus depends on `espeak-ng`.
++
++## building
++First follow in installation instruction on `<project root>/libpiper/README.md`, then build with the following:
++
++```sh
++cmake -Bbuild
++cmake --build build
++```
++
++
+diff --git a/piper-speak/piper-speak.cpp b/piper-speak/piper-speak.cpp
+new file mode 100644
+index 0000000..5d14178
+--- /dev/null
++++ b/piper-speak/piper-speak.cpp
+@@ -0,0 +1,62 @@
++#include <fstream>
++#include <piper.h>
++#include <filesystem>
++#include <iostream>
++
++//our build system supplies us with 2 config paths
++// BUILD_ENV_ESPEAK_EN_DATA holds espeak data for piper
++// BUILD_ENV_VOICES_PATH holds a folder which contains voices
++
++///returns the path to some voice's onnx file 
++std::filesystem::path get_any_voice() {
++    std::filesystem::path voice_dir = BUILD_ENV_VOICES_PATH;
++    if (!std::filesystem::exists(voice_dir)) {
++        std::cerr << "the voice directory (" << voice_dir << ") does not exist";
++        std::exit(1);
++    }
++    //find a pair of files named *.onnx and *.onnx.json
++    for (auto file : std::filesystem::directory_iterator(voice_dir)) {
++        if (file.path().extension() == ".onnx"
++            && std::filesystem::exists(
++                file.path().string() + std::string(".json"))) {
++            //normal function exit
++            return file.path();
++        }
++    }
++
++    //error case of no valid voices
++    std::cerr << "the voice directory (" << voice_dir << ") contains no voices";
++    std::exit(1);
++}
++
++int main() {
++    std::filesystem::path voice_onnx_path = get_any_voice();
++    std::filesystem::path voice_json_path
++        = voice_onnx_path.string() + std::string(".json");
++    piper_synthesizer *synth = piper_create(voice_onnx_path.c_str(),
++                                            voice_json_path.c_str(),
++                                            BUILD_ENV_ESPEAK_NG_DATA);
++
++    // aplay -r 22050 -c 1 -f FLOAT_LE -t raw output.raw
++    std::ofstream audio_stream("output.raw", std::ios::binary);
++
++    piper_synthesize_options options = piper_default_synthesize_options(synth);
++    // Change options here:
++    // options.length_scale = 2;
++    // options.speaker_id = 5;
++
++    piper_synthesize_start(synth, "Welcome to the world of speech synthesis!",
++                           &options /* NULL for defaults */);
++
++    piper_audio_chunk chunk;
++    while (piper_synthesize_next(synth, &chunk) != PIPER_DONE) {
++        audio_stream.write(reinterpret_cast<const char *>(chunk.samples),
++                           chunk.num_samples * sizeof(float));
++    }
++
++    piper_free(synth);
++
++    return 0;
++}
++
++// vim: ts=4 sw=4 expandtab
+
+From 510fbe64997c9aa975abbb532b07d0f32ca06e54 Mon Sep 17 00:00:00 2001
+From: ribbon-otter <ribbon-otter@github.invalid>
+Date: Sun, 14 Sep 2025 19:39:04 -0700
+Subject: [PATCH 2/2]  read from file, stdin, or commandline
+
+---
+ piper-speak/CMakeLists.txt  | 41 ++++++++++------
+ piper-speak/audio.cpp       | 56 ++++++++++++++++++++++
+ piper-speak/audio.h         |  5 ++
+ piper-speak/piper-speak.cpp | 93 +++++++++++++++++++++++++++++++------
+ 4 files changed, 166 insertions(+), 29 deletions(-)
+ create mode 100644 piper-speak/audio.cpp
+ create mode 100644 piper-speak/audio.h
+
+diff --git a/piper-speak/CMakeLists.txt b/piper-speak/CMakeLists.txt
+index f5f698b..ca1e2f2 100644
+--- a/piper-speak/CMakeLists.txt
++++ b/piper-speak/CMakeLists.txt
+@@ -2,6 +2,8 @@
+ cmake_minimum_required(VERSION 3.26)
+ project(piper-speak LANGUAGES CXX)
+ 
++set(SOURCE_FILES piper-speak.cpp audio.cpp)
++
+ set(LIBPIPER_DIR ${CMAKE_BINARY_DIR}/../../libpiper/install)
+ 
+ ### set the dependencies as described in ROOT/libpiper/README.md
+@@ -14,10 +16,7 @@ set(ESPEAK_NG_DATA=${LIBPIPER_DIR}/espeak-ng-data/)
+ #We also need the path to the voices: the .onnx and the .onnx.json
+ set(VOICES_DIR ${CMAKE_BINARY_DIR}/../download/voices)
+ 
+-### With the variables set, we now hook them up to CMAKE
+-
+-#piper.h header
+-include_directories(${PIPER_HEADER})
++### Actually find the libraries
+ 
+ #link libpiper
+ find_library(LIBPIPER
+@@ -41,19 +40,31 @@ if(NOT ONNXRUNTIME)
+ 	message(FATAL_ERROR "Could not find onnxruntime in ${ONNX_LIB_DIR}")
+ endif()
+ 
+-#tell the code where ESPEAK_NG_DATA is located
+-add_definitions(-DBUILD_ENV_ESPEAK_NG_DATA=\"${ESPEAK_EN_DATA}\")
+-
+-#tell the code where the voices are located
+-add_definitions(-DBUILD_ENV_VOICES_PATH=\"${VOICES_DIR}\")
+-
+-
+-### we are done for the most part with the README steps
+-
+-add_executable(${PROJECT_NAME} piper-speak.cpp)
++# We depend on pcaudiolib for audio output
++# since we already depend on espeak-ng and espeak-ng generally depends on pcaudiolib
++# this shouldn't add additional dependences. 
++# though currently we bundle espeak-ng while this looks for system pcaudiolib
++find_library(PCAUDIO_LIB
++	NAMES pcaudio
++	)
++
++find_path(PCAUDIO_INCLUDE
++	NAMES pcaudiolib/audio.h
++	)
++
++### create the target and configure it
++add_executable(${PROJECT_NAME} ${SOURCE_FILES})
++target_include_directories(${PROJECT_NAME} PRIVATE ${PIPER_HEADER})
++target_include_directories(${PROJECT_NAME} PRIVATE ${PCAUDIO_INCLUDE})
+ target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBPIPER})
+ target_link_libraries(${PROJECT_NAME} PRIVATE ${ONNXRUNTIME})
+-
++target_link_libraries(${PROJECT_NAME} PRIVATE ${PCAUDIO_LIB})
++target_compile_definitions(${PROJECT_NAME}
++	#tell the code where ESPEAK_NG_DATA is located
++	PRIVATE -DBUILD_ENV_ESPEAK_NG_DATA=\"${ESPEAK_EN_DATA}\"
++	#tell the code where the voices are located
++	PRIVATE -DBUILD_ENV_VOICES_PATH=\"${VOICES_DIR}\"
++)
+ #we use c++17 to get the std::filesystem header
+ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
+ 
+diff --git a/piper-speak/audio.cpp b/piper-speak/audio.cpp
+new file mode 100644
+index 0000000..48b6086
+--- /dev/null
++++ b/piper-speak/audio.cpp
+@@ -0,0 +1,56 @@
++//we use pcaudiolib because it is espeak-ng's backing system
++#include <cstddef>
++#include <iostream>
++#include <pcaudiolib/audio.h>
++#include <cstdint>
++#include <stdint.h>
++
++static struct audio_object *my_audio = NULL;
++
++constexpr uint32_t audio_rate = 22050;
++
++void init_audio() {
++    //create the audio device
++    my_audio = create_audio_device_object(nullptr, "piper-speak", "text-to-speech");
++    int error = audio_object_open(my_audio, AUDIO_OBJECT_FORMAT_S16LE, audio_rate, 1);
++    if (error != 0) {
++        std::cout << "failed to open device because "
++            << audio_object_strerror(my_audio, error) << "\n";
++        exit(1);
++    }
++}
++
++void play_audio(const float * in_data, size_t num_samples, float volume) {
++    //convert to signed 16bit intergers
++    int16_t cast_data[num_samples];
++    for (size_t i = 0; i < num_samples; ++i) {
++        cast_data[i] = static_cast<int16_t>(in_data[i] * float{INT16_MAX});
++    }
++    //we convert to 16bit integers because that is what espeak-ng uses with pcaudiolib
++    //so it is presumably widely supported
++    //this code assumes we are on a little endian machine, but I believe all PC's
++    //are currently little endian, so it is a fine assumption for now.
++    //if it is ported to a IBM mainframe then perhaps we will need to change it 
++
++    //actually play audio
++    int error = audio_object_write(my_audio, cast_data, sizeof(cast_data));
++    if (error != 0) {
++        std::cout << "failed to play audio because "
++            <<  audio_object_strerror(my_audio, error) << "\n";
++        exit(1);
++    }
++}
++
++void wait_for_audio_to_finish() {
++    int error = audio_object_drain(my_audio);
++    if (error != 0) {
++        std::cout << "failed to wait for audio to play because "
++            <<  audio_object_strerror(my_audio, error) << "\n";
++        exit(1);
++    }
++}
++
++void cleanup_audio() {
++    audio_object_close(my_audio); 
++    audio_object_destroy(my_audio); //frees my_audio 
++}
+diff --git a/piper-speak/audio.h b/piper-speak/audio.h
+new file mode 100644
+index 0000000..93abb21
+--- /dev/null
++++ b/piper-speak/audio.h
+@@ -0,0 +1,5 @@
++#include <cstddef>
++void init_audio();
++void play_audio(const float * in_data, size_t num_samples, float volume = 1.0);
++void cleanup_audio();
++void wait_for_audio_to_finish();
+diff --git a/piper-speak/piper-speak.cpp b/piper-speak/piper-speak.cpp
+index 5d14178..01a4348 100644
+--- a/piper-speak/piper-speak.cpp
++++ b/piper-speak/piper-speak.cpp
+@@ -1,7 +1,9 @@
+-#include <fstream>
+ #include <piper.h>
+ #include <filesystem>
+ #include <iostream>
++#include <fstream>
++#include <string>
++#include "audio.h"
+ 
+ //our build system supplies us with 2 config paths
+ // BUILD_ENV_ESPEAK_EN_DATA holds espeak data for piper
+@@ -29,33 +31,96 @@ std::filesystem::path get_any_voice() {
+     std::exit(1);
+ }
+ 
+-int main() {
++//call afer piper_synthesize_start to play the synthesized data
++void play_piper_chunks(piper_synthesizer* synth,
++    const piper_synthesize_options& options) {
++    piper_audio_chunk chunk;
++    while (piper_synthesize_next(synth, &chunk) != PIPER_DONE) {
++        //set to seem like a good volume for piper's output
++        constexpr float volume = 1.5;
++        play_audio(chunk.samples, chunk.num_samples, volume);
++    }
++}
++
++void read_string(piper_synthesizer* synth,
++    const piper_synthesize_options& options, 
++    const std::string& toRead) {
++    piper_synthesize_start(synth, toRead.c_str(), &options);
++    play_piper_chunks(synth, options);
++}
++
++void read_file(piper_synthesizer* synth,
++    const piper_synthesize_options& options, const std::filesystem::path& filename) {
++    std::ifstream file(filename);
++    if (!file.is_open()) {
++        std::cerr << "failed to read: " << filename << "\n";
++        exit(1);
++    }
++    //this is suboptimal because perhaps the entire file doesn't fit in memory
++    std::string entire_file = std::string(
++        std::istreambuf_iterator<char>(file),
++        std::istreambuf_iterator<char>()
++    ); 
++    
++    read_string(synth, options, entire_file);
++}
++
++void read_stdin(piper_synthesizer* synth,
++    const piper_synthesize_options& options) {
++    //we are loading input line by line here.
++    //This is suboptimal as it means that piper doesn't see
++    //the entire sentence, leading to weird innotation. 
++    //likewise very long lines could cause memory hogging issues.
++    std::string line;
++    while (std::getline(std::cin, line)) {
++        piper_synthesize_start(synth, line.c_str(), &options);
++        play_piper_chunks(synth, options);
++    }
++}
++
++constexpr std::string_view help_string = 
++"USAGE: \n"
++"piper-speak --help OR piper-speak -h        prints this help\n"
++"piper-speak -f <file-to-read>               reads a file\n"
++"piper-speak '<words to speak...>'           reads the commandline argument\n"
++"piper-speak OR piper-speak --stdin'         reads stdin line by line\n";
++
++int main(int argc, char** argv) {
+     std::filesystem::path voice_onnx_path = get_any_voice();
+     std::filesystem::path voice_json_path
+         = voice_onnx_path.string() + std::string(".json");
+     piper_synthesizer *synth = piper_create(voice_onnx_path.c_str(),
+                                             voice_json_path.c_str(),
+                                             BUILD_ENV_ESPEAK_NG_DATA);
+-
+-    // aplay -r 22050 -c 1 -f FLOAT_LE -t raw output.raw
+-    std::ofstream audio_stream("output.raw", std::ios::binary);
++    //initialize the audio to play
++    init_audio();
+ 
+     piper_synthesize_options options = piper_default_synthesize_options(synth);
+     // Change options here:
+     // options.length_scale = 2;
+     // options.speaker_id = 5;
+ 
+-    piper_synthesize_start(synth, "Welcome to the world of speech synthesis!",
+-                           &options /* NULL for defaults */);
+-
+-    piper_audio_chunk chunk;
+-    while (piper_synthesize_next(synth, &chunk) != PIPER_DONE) {
+-        audio_stream.write(reinterpret_cast<const char *>(chunk.samples),
+-                           chunk.num_samples * sizeof(float));
++    if (argc > 1 && 
++        (std::string(argv[1]) == "--help"
++            || std::string(argv[1]) == "-h"
++        )) {
++        std::cerr << help_string;
++    } else if (argc == 1
++        || (argc == 2 && std::string(argv[1]) == "--stdin")
++       ){
++         read_stdin(synth, options);
++    } else if (argc == 3 && std::string(argv[1]) == "-f") {
++        read_file(synth, options, argv[2]);
++    } else if (argc == 2) {
++        read_string(synth, options, argv[1]);
++    } else {
++        std::cerr << "invalid commandline arguments\n";
++        std::cerr << help_string;
+     }
+-
++    
++    wait_for_audio_to_finish();
+     piper_free(synth);
+-
++    cleanup_audio();
+     return 0;
+ }
+ 

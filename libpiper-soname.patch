@@ -1,0 +1,12 @@
+diff -up piper1-gpl-main/libpiper/CMakeLists.txt.omv~ piper1-gpl-main/libpiper/CMakeLists.txt
+--- piper1-gpl-main/libpiper/CMakeLists.txt.omv~	2025-10-06 02:16:23.453887085 +0200
++++ piper1-gpl-main/libpiper/CMakeLists.txt	2025-10-06 02:17:22.304743883 +0200
+@@ -57,6 +57,7 @@ include_directories(/usr/include/onnxrun
+ add_library(piper SHARED
+     ${CMAKE_CURRENT_SOURCE_DIR}/src/piper.cpp
+ )
++set_target_properties(piper PROPERTIES VERSION 0.0 SOVERSION 0)
+ 
+ add_dependencies(piper espeak_ng_external)
+ target_include_directories(piper PUBLIC
+diff -up piper1-gpl-main/libpiper/src/piper.cpp.omv~ piper1-gpl-main/libpiper/src/piper.cpp
