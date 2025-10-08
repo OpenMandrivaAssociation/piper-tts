@@ -27,6 +27,9 @@ BuildRequires:	cmake
 BuildRequires:	ninja
 BuildRequires:	pkgconfig(nlohmann_json)
 BuildRequires:	pkgconfig(libonnxruntime)
+BuildRequires:	pkgconfig(espeak-ng)
+# For data files that could also get installed as duplicates here
+Requires:	espeak-ng
 
 %patchlist
 https://github.com/OHF-Voice/piper1-gpl/pull/17.patch
@@ -39,6 +42,8 @@ libpiper-onnxruntime-1.20.1.patch
 piper-speak-compile.patch
 piper-speak-system-voices.patch
 piper-system-voices.patch
+# There's no such thing as -ac
+piper-fix-ffplay-arguments.patch
 
 %description
 A fast and local neural text-to-speech engine that embeds
