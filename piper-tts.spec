@@ -29,8 +29,7 @@ BuildRequires:	pkgconfig(nlohmann_json)
 BuildRequires:	pkgconfig(libonnxruntime)
 
 %patchlist
-# Not yet ready
-#https://github.com/OHF-Voice/piper1-gpl/pull/17.patch
+https://github.com/OHF-Voice/piper1-gpl/pull/17.patch
 https://github.com/OHF-Voice/piper1-gpl/pull/80.patch
 libpiper-system-onnxruntime.patch
 piper-system-json.patch
@@ -39,6 +38,7 @@ libpiper-install-location.patch
 libpiper-onnxruntime-1.20.1.patch
 piper-speak-compile.patch
 piper-speak-system-voices.patch
+piper-system-voices.patch
 
 %description
 A fast and local neural text-to-speech engine that embeds

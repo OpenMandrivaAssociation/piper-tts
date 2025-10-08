@@ -1,0 +1,29 @@
+diff -up piper1-gpl-main/src/piper/__main__.py.omv~ piper1-gpl-main/src/piper/__main__.py
+--- piper1-gpl-main/src/piper/__main__.py.omv~	2025-10-08 18:09:23.768711251 +0200
++++ piper1-gpl-main/src/piper/__main__.py	2025-10-08 18:10:31.836797893 +0200
+@@ -85,8 +85,8 @@ def main() -> None:
+         "--data-dir",
+         "--data_dir",
+         action="append",
+-        default=[str(Path.cwd())],
+-        help="Data directory to check for voice models (default: current directory)",
++        default=[str(Path.cwd()), '/usr/share/piper/voices'],
++        help="Data directory to check for voice models (default: current directory and /usr/share/piper/voices)",
+     )
+     #
+     parser.add_argument(
+diff -up piper1-gpl-main/src/piper/download_voices.py.omv~ piper1-gpl-main/src/piper/download_voices.py
+diff -up piper1-gpl-main/src/piper/http_server.py.omv~ piper1-gpl-main/src/piper/http_server.py
+--- piper1-gpl-main/src/piper/http_server.py.omv~	2025-10-08 18:10:41.059396907 +0200
++++ piper1-gpl-main/src/piper/http_server.py	2025-10-08 18:11:00.200953475 +0200
+@@ -55,8 +55,8 @@ def main() -> None:
+         "--data-dir",
+         "--data_dir",
+         action="append",
+-        default=[str(Path.cwd())],
+-        help="Data directory to check for downloaded models (default: current directory)",
++        default=[str(Path.cwd()), '/usr/share/piper/voices'],
++        help="Data directory to check for downloaded models (default: current directory and /usr/share/piper/voices)",
+     )
+     parser.add_argument(
+         "--download-dir",
