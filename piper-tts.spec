@@ -12,9 +12,6 @@ Source0:	https://github.com/OHF-Voice/piper1-gpl/archive/refs/heads/main.tar.gz#
 %else
 Source0:	https://github.com/OHF-Voice/piper1-gpl/archive/refs/tags/v%{version}.tar.gz
 %endif
-# Keep in sync with the version requested in piper1-gpl sources
-%define espeak 212928b394a96e8fd2096616bfd54e17845c48f6
-Source1:	https://github.com/espeak-ng/espeak-ng/archive/%{espeak}.tar.gz
 Summary:	Text-to-Speech system
 # Also https://github.com/rhasspy/piper
 URL:		https://github.com/OHF-Voice/piper1-gpl
@@ -44,6 +41,7 @@ piper-speak-system-voices.patch
 piper-system-voices.patch
 # There's no such thing as -ac
 piper-fix-ffplay-arguments.patch
+piper-system-espeak-ng.patch
 
 %description
 A fast and local neural text-to-speech engine that embeds
@@ -67,13 +65,7 @@ Requires:	%{libname} = %{EVRD}
 Development files for the piper Text-to-Speech library
 
 %prep
-%autosetup -p1 -a1 -n piper1-gpl-%{?git:main}%{!?git:%{version}}
-ESPEAKDIR=$(pwd)/espeak-ng-%{espeak}
-# See https://github.com/espeak-ng/espeak-ng/issues/2048
-sed 's/160/1024/' -i "${ESPEAKDIR}/src/libespeak-ng/speech.h"
-sed -e "s|GIT_REPOSITORY.*|SOURCE_DIR ${ESPEAKDIR}|" \
-	-e 's|GIT_TAG.*|DOWNLOAD_COMMAND ""|' \
-	-i CMakeLists.txt libpiper/CMakeLists.txt
+%autosetup -p1 -n piper1-gpl-%{?git:main}%{!?git:%{version}}
 # We use the system version
 rm -f libpiper/include/json.hpp
 

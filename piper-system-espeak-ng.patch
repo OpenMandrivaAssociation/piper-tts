@@ -1,0 +1,111 @@
+diff -up piper1-gpl-main/libpiper/CMakeLists.txt.12~ piper1-gpl-main/libpiper/CMakeLists.txt
+--- piper1-gpl-main/libpiper/CMakeLists.txt.12~	2025-10-09 18:30:33.814156116 +0200
++++ piper1-gpl-main/libpiper/CMakeLists.txt	2025-10-09 18:33:08.371076079 +0200
+@@ -5,50 +5,6 @@ project(piper LANGUAGES C CXX)
+ set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ 
+-include(ExternalProject)
+-
+-# Install location for espeak-ng
+-set(ESPEAKNG_BUILD_DIR ${CMAKE_BINARY_DIR}/espeak_ng)
+-set(ESPEAKNG_INSTALL_DIR ${CMAKE_BINARY_DIR}/espeak_ng-install)
+-
+-if(WIN32)
+-    # Special handling for Windows
+-    set(ESPEAKNG_STATIC_LIB ${ESPEAKNG_INSTALL_DIR}/lib/espeak-ng.lib)
+-    set(UCD_STATIC_LIB ${ESPEAKNG_BUILD_DIR}/src/espeak_ng_external-build/src/ucd-tools/ucd.lib)
+-else()
+-    set(ESPEAKNG_STATIC_LIB ${ESPEAKNG_INSTALL_DIR}/lib/libespeak-ng.a)
+-    set(UCD_STATIC_LIB ${ESPEAKNG_BUILD_DIR}/src/espeak_ng_external-build/src/ucd-tools/libucd.a)
+-endif()
+-
+-ExternalProject_Add(espeak_ng_external
+-    GIT_REPOSITORY https://github.com/espeak-ng/espeak-ng.git
+-    GIT_TAG 212928b394a96e8fd2096616bfd54e17845c48f6  # 2025-Mar-22
+-    PREFIX ${ESPEAKNG_BUILD_DIR}
+-    CMAKE_ARGS
+-        -DCMAKE_INSTALL_PREFIX=${ESPEAKNG_INSTALL_DIR}
+-        -DBUILD_SHARED_LIBS:BOOL=OFF
+-        -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=ON
+-        -DUSE_ASYNC:BOOL=OFF
+-        -DUSE_MBROLA:BOOL=OFF
+-        -DUSE_LIBSONIC:BOOL=OFF
+-        -DUSE_LIBPCAUDIO:BOOL=OFF
+-        -DUSE_KLATT:BOOL=OFF
+-        -DUSE_SPEECHPLAYER:BOOL=OFF
+-        -DEXTRA_cmn:BOOL=ON
+-        -DEXTRA_ru:BOOL=ON
+-        # Need to explicitly add ucd include directory for CI
+-        "-DCMAKE_C_FLAGS=-D_FILE_OFFSET_BITS=64 -I${ESPEAKNG_BUILD_DIR}/src/espeak_ng_external/src/ucd-tools/src/include"
+-        "-DCMAKE_CXX_FLAGS=-D_FILE_OFFSET_BITS=64 -I${ESPEAKNG_BUILD_DIR}/src/espeak_ng_external/src/ucd-tools/src/include"
+-    BUILD_BYPRODUCTS
+-        ${ESPEAKNG_STATIC_LIB}
+-        ${UCD_STATIC_LIB}
+-    UPDATE_DISCONNECTED TRUE
+-)
+-
+-include_directories(
+-    ${ESPEAKNG_INSTALL_DIR}/include
+-)
+-
+ # ---- onnxruntime ---
+ include_directories(/usr/include/onnxruntime)
+ 
+@@ -59,9 +15,8 @@ add_library(piper SHARED
+ )
+ set_target_properties(piper PROPERTIES VERSION 0.0 SOVERSION 0)
+ 
+-add_dependencies(piper espeak_ng_external)
+ target_include_directories(piper PUBLIC
+-    ${ESPEAKNG_INSTALL_DIR}/include
++    /usr/include/espeak-ng
+     ${ONNXRUNTIME_DIR}/include
+     ${CMAKE_CURRENT_SOURCE_DIR}/include
+ )
+@@ -69,8 +24,7 @@ target_link_directories(piper PUBLIC
+     ${ONNXRUNTIME_DIR}/lib
+ )
+ target_link_libraries(piper
+-    ${ESPEAKNG_STATIC_LIB}
+-    ${UCD_STATIC_LIB}
++    espeak-ng
+     onnxruntime
+ )
+ 
+@@ -91,12 +45,3 @@ install(
+     DIRECTORY ${ONNXRUNTIME_DIR}/lib/
+     DESTINATION ${CMAKE_INSTALL_LIBDIR}/piper
+ )
+-
+-# Copy espeak-ng-data
+-set(ESPEAKNG_DATA_SRC ${CMAKE_BINARY_DIR}/espeak_ng-install/share/espeak-ng-data)
+-set(ESPEAKNG_DATA_DST ${CMAKE_INSTALL_PREFIX}/share/espeak-ng-data)
+-
+-install(
+-    DIRECTORY ${ESPEAKNG_DATA_SRC}
+-    DESTINATION ${CMAKE_INSTALL_PREFIX}/share
+-)
+diff -up piper1-gpl-main/setup.py.12~ piper1-gpl-main/setup.py
+--- piper1-gpl-main/setup.py.12~	2025-09-10 05:00:31.000000000 +0200
++++ piper1-gpl-main/setup.py	2025-10-09 18:30:33.926693717 +0200
+@@ -7,10 +7,6 @@ from skbuild import setup
+ 
+ MODULE_DIR = Path(__file__).parent / "src" / "piper"
+ PIPER_DATA_FILES = ["py.typed", "espeakbridge.pyi"]
+-ESPEAK_NG_DATA_DIR = MODULE_DIR / "espeak-ng-data"
+-ESPEAK_NG_DATA_FILES = [
+-    f.relative_to(MODULE_DIR) for f in ESPEAK_NG_DATA_DIR.rglob("*") if f.is_file()
+-]
+ TASHKEEL_DATA_DIR = MODULE_DIR / "tashkeel"
+ TASHKEEL_DATA_FILES = [
+     (TASHKEEL_DATA_DIR / f_name).relative_to(MODULE_DIR)
+@@ -83,7 +79,7 @@ setup(
+         "piper": [
+             str(p)
+             for p in itertools.chain(
+-                PIPER_DATA_FILES, ESPEAK_NG_DATA_FILES, TASHKEEL_DATA_FILES
++                PIPER_DATA_FILES, TASHKEEL_DATA_FILES
+             )
+         ],
+     },
