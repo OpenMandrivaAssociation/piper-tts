@@ -25,8 +25,14 @@ BuildRequires:	ninja
 BuildRequires:	pkgconfig(nlohmann_json)
 BuildRequires:	pkgconfig(libonnxruntime)
 BuildRequires:	pkgconfig(espeak-ng)
+# Only for piper-speak
+BuildRequires:	pcaudiolib-devel
 # For data files that could also get installed as duplicates here
 Requires:	espeak-ng
+# This is really a "Requires:", but since it can also be fulfilled by downloading a
+# voice somewhere (and an app using piper might come with a voice), let's keep it
+# a soft dependency
+Recommends:	piper-voice
 
 %patchlist
 https://github.com/OHF-Voice/piper1-gpl/pull/17.patch
@@ -42,6 +48,7 @@ piper-system-voices.patch
 # There's no such thing as -ac
 piper-fix-ffplay-arguments.patch
 piper-system-espeak-ng.patch
+piper-speak-improvements.patch
 
 %description
 A fast and local neural text-to-speech engine that embeds
@@ -63,6 +70,14 @@ Requires:	%{libname} = %{EVRD}
 
 %description -n %{devname}
 Development files for the piper Text-to-Speech library
+
+%package -n piper-speak
+Summary:	Application for Text-to-Speech conversion using libpiper
+Requires:	%{libname} = %{EVRD}
+Group:		Video/Multimedia
+
+%description -n piper-speak
+Application for Text-to-Speech conversion using libpiper
 
 %prep
 %autosetup -p1 -n piper1-gpl-%{?git:main}%{!?git:%{version}}
@@ -100,11 +115,13 @@ rm -rf %{buildroot}%{_datadir}/espeak-ng-data
 
 %if %{with clib}
 %files -n %{libname}
-%{_bindir}/piper-speak
 %{_libdir}/libpiper.so.0*
 %{_libdir}/piper
 
 %files -n %{devname}
 %{_libdir}/libpiper.so
 %{_includedir}/piper.h
+
+%files -n piper-speak
+%{_bindir}/piper-speak
 %endif

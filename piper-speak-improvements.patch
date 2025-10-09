@@ -1,0 +1,191 @@
+diff -up piper1-gpl-main/piper-speak/CMakeLists.txt.omv~ piper1-gpl-main/piper-speak/CMakeLists.txt
+--- piper1-gpl-main/piper-speak/CMakeLists.txt.omv~	2025-10-09 21:00:08.917668160 +0200
++++ piper1-gpl-main/piper-speak/CMakeLists.txt	2025-10-09 21:00:23.270692228 +0200
+@@ -65,8 +65,8 @@ target_compile_definitions(${PROJECT_NAM
+ 	#tell the code where the voices are located
+ 	PRIVATE -DBUILD_ENV_VOICES_PATH=\"${VOICES_DIR}\"
+ )
+-#we use c++17 to get the std::filesystem header
+-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
++#we use c++20 to get the std::filesystem header and std::string::starts_with
++set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20)
+ 
+ ### We still need to download a voice to use
+ file(MAKE_DIRECTORY download/voices)
+diff -up piper1-gpl-main/piper-speak/piper-speak.cpp.omv~ piper1-gpl-main/piper-speak/piper-speak.cpp
+--- piper1-gpl-main/piper-speak/piper-speak.cpp.omv~	2025-10-09 21:00:26.739647845 +0200
++++ piper1-gpl-main/piper-speak/piper-speak.cpp	2025-10-09 20:59:41.008563807 +0200
+@@ -10,14 +10,16 @@
+ // BUILD_ENV_VOICES_PATH holds a folder which contains voices
+ 
+ ///returns the path to some voice's onnx file 
+-std::filesystem::path get_any_voice() {
++std::filesystem::path get_any_voice(const std::string &language="") {
+     std::filesystem::path voice_dir = BUILD_ENV_VOICES_PATH;
+     if (!std::filesystem::exists(voice_dir)) {
+-        std::cerr << "the voice directory (" << voice_dir << ") does not exist";
+-        std::exit(1);
++        std::cerr << "the voice directory (" << voice_dir << ") does not exist" << std::endl;
++        return std::filesystem::path();
+     }
+     //find a pair of files named *.onnx and *.onnx.json
+     for (auto file : std::filesystem::directory_iterator(voice_dir)) {
++        if (!language.empty() && !std::string(file.path().filename()).starts_with(language))
++            continue;
+         if (file.path().extension() == ".onnx"
+             && std::filesystem::exists(
+                 file.path().string() + std::string(".json"))) {
+@@ -27,8 +29,29 @@ std::filesystem::path get_any_voice() {
+     }
+ 
+     //error case of no valid voices
+-    std::cerr << "the voice directory (" << voice_dir << ") contains no voices";
+-    std::exit(1);
++    if(language.empty())
++        std::cerr << "the voice directory (" << voice_dir << ") contains no voices" << std::endl;
++    else
++        std::cerr << "the voice directory (" << voice_dir << ") contains no voices for language " << language << std::endl;
++    return std::filesystem::path();
++}
++
++///returns the path to a specific voice's onnx file
++std::filesystem::path get_voice(const std::string &name) {
++    std::filesystem::path voice_file;
++    if(name.starts_with('/'))
++        voice_file = name;
++    else
++        voice_file = std::string(std::filesystem::path(BUILD_ENV_VOICES_PATH) / name) + ".onnx";
++    if (!std::filesystem::exists(voice_file)) {
++        std::cerr << "Voice " << voice_file << " does not exist" << std::endl;
++        return std::filesystem::path();
++    }
++    if (!std::filesystem::exists(std::string(voice_file) + ".json")) {
++        std::cerr << "JSON file accompanying " << voice_file << " does not exist" << std::endl;
++        return std::filesystem::path();
++    }
++    return voice_file;
+ }
+ 
+ //call afer piper_synthesize_start to play the synthesized data
+@@ -53,7 +76,7 @@ void read_file(piper_synthesizer* synth,
+     const piper_synthesize_options& options, const std::filesystem::path& filename) {
+     std::ifstream file(filename);
+     if (!file.is_open()) {
+-        std::cerr << "failed to read: " << filename << "\n";
++        std::cerr << "failed to read: " << filename << std::endl;
+         exit(1);
+     }
+     //this is suboptimal because perhaps the entire file doesn't fit in memory
+@@ -86,7 +109,79 @@ constexpr std::string_view help_string =
+ "piper-speak OR piper-speak --stdin'         reads stdin line by line\n";
+ 
+ int main(int argc, char** argv) {
+-    std::filesystem::path voice_onnx_path = get_any_voice();
++    std::filesystem::path voice_onnx_path;
++    std::string language;
++    std::string textfile;
++    std::string text;
++
++    for(int i=1; i<argc; ++i) {
++        std::string arg(argv[i]);
++        if(arg == "--help" || arg == "-h")
++            std::cerr << help_string;
++        else if(arg == "--voice" || arg == "-v") {
++            if(i < argc-1) {
++                voice_onnx_path = get_voice(argv[++i]);
++            } else {
++                std::cerr << "Missing parameter for " << arg << std::endl;
++            }
++        } else if(arg == "--language" || arg == "-l") {
++            if(i < argc-1) {
++                language = argv[++i];
++            } else {
++                std::cerr << "Missing parameter for " << arg << std::endl;
++            }
++        } else if(arg == "-f" || arg == "--file") {
++            if(i < argc-1) {
++                textfile = argv[++i];
++            } else {
++                std::cerr << "Missing parameter for " << arg << std::endl;
++            }
++        } else if(arg == "--stdin") {
++            // ignored for compatibility with previous version;
++            // stdin is now the default if neither a text nor
++            // a text file are given
++        } else if(arg.starts_with('-')) {
++            std::cerr << "Unknown option " << arg << std::endl;
++        } else
++            text += arg + " ";
++    }
++
++    if(!text.empty() && !textfile.empty()) {
++        std::cerr << "Both a text file and a text specified, pick one" << std::endl;
++        std::exit(1);
++    }
++
++    if(voice_onnx_path.empty()) {
++        if(language.empty()) {
++            if(getenv("LC_MESSAGES"))
++                language=getenv("LC_MESSAGES");
++            else if(getenv("LC_ALL"))
++                language=getenv("LC_ALL");
++            else if(getenv("LANG"))
++                language=getenv("LANG");
++            else
++                language="en_US.UTF-8";
++        }
++
++        // We don't care about the charset, if given...
++        if(language.find('.') != std::string::npos)
++            language.erase(language.find('.'));
++        voice_onnx_path = get_any_voice(language);
++        if(voice_onnx_path.empty() && language.find('_') != std::string::npos) {
++            // Fall back to a variant ("en" instead of "en_US" or "en_GB")
++            // if the perfect match isn't there
++            language.erase(language.find('_'));
++            voice_onnx_path = get_any_voice(language);
++        }
++
++        // Lastly, try anything at all...
++        voice_onnx_path = get_any_voice();
++        if(voice_onnx_path.empty()) {
++            std::cerr << "No voice found, giving upp" << std::endl;
++            std::exit(1);
++        }
++    }
++
+     std::filesystem::path voice_json_path
+         = voice_onnx_path.string() + std::string(".json");
+     piper_synthesizer *synth = piper_create(voice_onnx_path.c_str(),
+@@ -100,24 +195,13 @@ int main(int argc, char** argv) {
+     // options.length_scale = 2;
+     // options.speaker_id = 5;
+ 
+-    if (argc > 1 && 
+-        (std::string(argv[1]) == "--help"
+-            || std::string(argv[1]) == "-h"
+-        )) {
+-        std::cerr << help_string;
+-    } else if (argc == 1
+-        || (argc == 2 && std::string(argv[1]) == "--stdin")
+-       ){
+-         read_stdin(synth, options);
+-    } else if (argc == 3 && std::string(argv[1]) == "-f") {
+-        read_file(synth, options, argv[2]);
+-    } else if (argc == 2) {
+-        read_string(synth, options, argv[1]);
+-    } else {
+-        std::cerr << "invalid commandline arguments\n";
+-        std::cerr << help_string;
+-    }
+-    
++    if(!text.empty())
++        read_string(synth, options, text);
++    else if(!textfile.empty())
++        read_file(synth, options, textfile);
++    else
++        read_stdin(synth, options);
++
+     wait_for_audio_to_finish();
+     piper_free(synth);
+     cleanup_audio();
