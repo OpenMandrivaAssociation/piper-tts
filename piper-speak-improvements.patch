@@ -1,6 +1,6 @@
 diff -up piper1-gpl-main/piper-speak/CMakeLists.txt.13~ piper1-gpl-main/piper-speak/CMakeLists.txt
---- piper1-gpl-main/piper-speak/CMakeLists.txt.13~	2025-10-09 21:20:25.616338966 +0200
-+++ piper1-gpl-main/piper-speak/CMakeLists.txt	2025-10-09 21:20:25.636529552 +0200
+--- piper1-gpl-main/piper-speak/CMakeLists.txt.13~	2025-10-09 21:31:28.768425123 +0200
++++ piper1-gpl-main/piper-speak/CMakeLists.txt	2025-10-09 21:31:28.788046197 +0200
 @@ -65,8 +65,8 @@ target_compile_definitions(${PROJECT_NAM
  	#tell the code where the voices are located
  	PRIVATE -DBUILD_ENV_VOICES_PATH=\"${VOICES_DIR}\"
@@ -13,8 +13,8 @@ diff -up piper1-gpl-main/piper-speak/CMakeLists.txt.13~ piper1-gpl-main/piper-sp
  ### We still need to download a voice to use
  file(MAKE_DIRECTORY download/voices)
 diff -up piper1-gpl-main/piper-speak/piper-speak.cpp.13~ piper1-gpl-main/piper-speak/piper-speak.cpp
---- piper1-gpl-main/piper-speak/piper-speak.cpp.13~	2025-10-09 21:20:25.580992899 +0200
-+++ piper1-gpl-main/piper-speak/piper-speak.cpp	2025-10-09 21:23:25.453283558 +0200
+--- piper1-gpl-main/piper-speak/piper-speak.cpp.13~	2025-10-09 21:31:28.733146147 +0200
++++ piper1-gpl-main/piper-speak/piper-speak.cpp	2025-10-09 21:36:19.471002900 +0200
 @@ -10,14 +10,16 @@
  // BUILD_ENV_VOICES_PATH holds a folder which contains voices
  
@@ -76,7 +76,7 @@ diff -up piper1-gpl-main/piper-speak/piper-speak.cpp.13~ piper1-gpl-main/piper-s
          exit(1);
      }
      //this is suboptimal because perhaps the entire file doesn't fit in memory
-@@ -86,7 +109,81 @@ constexpr std::string_view help_string =
+@@ -86,7 +109,86 @@ constexpr std::string_view help_string =
  "piper-speak OR piper-speak --stdin'         reads stdin line by line\n";
  
  int main(int argc, char** argv) {
@@ -93,6 +93,8 @@ diff -up piper1-gpl-main/piper-speak/piper-speak.cpp.13~ piper1-gpl-main/piper-s
 +        else if(arg == "--voice" || arg == "-v") {
 +            if(i < argc-1) {
 +                voice_onnx_path = get_voice(argv[++i]);
++                if(voice_onnx_path.empty())
++                    std::cerr << "Voice " << argv[i] << " not found" << std::endl;
 +            } else {
 +                std::cerr << "Missing parameter for " << arg << std::endl;
 +            }
@@ -125,10 +127,10 @@ diff -up piper1-gpl-main/piper-speak/piper-speak.cpp.13~ piper1-gpl-main/piper-s
 +
 +    if(voice_onnx_path.empty()) {
 +        if(language.empty()) {
-+            if(getenv("LC_MESSAGES"))
-+                language = getenv("LC_MESSAGES");
-+            else if(getenv("LC_ALL"))
++            if(getenv("LC_ALL"))
 +                language = getenv("LC_ALL");
++            else if(getenv("LC_MESSAGES"))
++                language = getenv("LC_MESSAGES");
 +            else if(getenv("LANG"))
 +                language = getenv("LANG");
 +            else
@@ -137,6 +139,7 @@ diff -up piper1-gpl-main/piper-speak/piper-speak.cpp.13~ piper1-gpl-main/piper-s
 +        if(language == "C" || language.starts_with("C.")) // The POSIX C locale (and C.UTF-8 etc.) comes down to US English...
 +            language = "en_US";
 +
++        std::cerr << "Language: " << language << std::endl;
 +        // We don't care about the charset, if given...
 +        if(language.find('.') != std::string::npos)
 +            language.erase(language.find('.'));
@@ -149,7 +152,9 @@ diff -up piper1-gpl-main/piper-speak/piper-speak.cpp.13~ piper1-gpl-main/piper-s
 +        }
 +
 +        // Lastly, try anything at all...
-+        voice_onnx_path = get_any_voice();
++        if(voice_onnx_path.empty())
++            voice_onnx_path = get_any_voice();
++
 +        if(voice_onnx_path.empty()) {
 +            std::cerr << "No voice found, giving upp" << std::endl;
 +            std::exit(1);
@@ -159,7 +164,7 @@ diff -up piper1-gpl-main/piper-speak/piper-speak.cpp.13~ piper1-gpl-main/piper-s
      std::filesystem::path voice_json_path
          = voice_onnx_path.string() + std::string(".json");
      piper_synthesizer *synth = piper_create(voice_onnx_path.c_str(),
-@@ -100,24 +197,13 @@ int main(int argc, char** argv) {
+@@ -100,24 +202,13 @@ int main(int argc, char** argv) {
      // options.length_scale = 2;
      // options.speaker_id = 5;
  
