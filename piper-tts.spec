@@ -27,12 +27,7 @@ BuildRequires:	pkgconfig(libonnxruntime)
 BuildRequires:	pkgconfig(espeak-ng)
 # Only for piper-speak
 BuildRequires:	pcaudiolib-devel
-# For data files that could also get installed as duplicates here
-Requires:	espeak-ng
-# This is really a "Requires:", but since it can also be fulfilled by downloading a
-# voice somewhere (and an app using piper might come with a voice), let's keep it
-# a soft dependency
-Recommends:	piper-voice
+Requires:	python-piper-tts = %{EVRD}
 
 %patchlist
 https://github.com/OHF-Voice/piper1-gpl/pull/17.patch
@@ -54,11 +49,26 @@ piper-speak-improvements.patch
 A fast and local neural text-to-speech engine that embeds
 espeak-ng for phonemization.
 
+%package -n python-piper-tts
+Summary:	Python version of the Piper text-to-speech system
+Group:		System/Multimedia
+Requires:	espeak-ng
+# This is really a "Requires:", but since it can also be fulfilled by downloading a
+# voice somewhere (and an app using piper might come with a voice), let's keep it
+# a soft dependency
+Recommends:	piper-voice
+
+%description -n python-piper-tts
+Python version of the Piper text-to-speech system
+
 %package -n %{libname}
 Summary:	Library for Text-to-Speech processing
 Group:		System/Libraries
-# For data files that could also get installed as duplicates here
 Requires:	espeak-ng
+# This is really a "Requires:", but since it can also be fulfilled by downloading a
+# voice somewhere (and an app using piper might come with a voice), let's keep it
+# a soft dependency
+Recommends:	piper-voice
 
 %description -n %{libname}
 Library for Text-to-Speech processing
@@ -99,6 +109,8 @@ cd ../../piper-speak
 %install -a
 rm -f %{buildroot}%{_prefix}/COPYING
 
+mkdir -p %{buildroot}%{_datadir}/piper/voices
+
 %if %{with clib}
 %ninja_install -C libpiper/build
 
@@ -110,6 +122,8 @@ rm -rf %{buildroot}%{_datadir}/espeak-ng-data
 
 %files
 %{_bindir}/piper
+
+%files -n python-piper-tts
 %{python3_sitearch}/piper
 %{python3_sitearch}/piper_tts-%(echo %{version} |sed -e 's,~.*,,').dist-info
 
@@ -121,6 +135,8 @@ rm -rf %{buildroot}%{_datadir}/espeak-ng-data
 %files -n %{devname}
 %{_libdir}/libpiper.so
 %{_includedir}/piper.h
+%dir %{_datadir}/piper
+%dir %{_datadir}/piper/voices
 
 %files -n piper-speak
 %{_bindir}/piper-speak

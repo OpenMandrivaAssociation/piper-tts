@@ -1,6 +1,6 @@
-diff -up piper1-gpl-main/piper-speak/CMakeLists.txt.omv~ piper1-gpl-main/piper-speak/CMakeLists.txt
---- piper1-gpl-main/piper-speak/CMakeLists.txt.omv~	2025-10-09 21:00:08.917668160 +0200
-+++ piper1-gpl-main/piper-speak/CMakeLists.txt	2025-10-09 21:00:23.270692228 +0200
+diff -up piper1-gpl-main/piper-speak/CMakeLists.txt.13~ piper1-gpl-main/piper-speak/CMakeLists.txt
+--- piper1-gpl-main/piper-speak/CMakeLists.txt.13~	2025-10-09 21:20:25.616338966 +0200
++++ piper1-gpl-main/piper-speak/CMakeLists.txt	2025-10-09 21:20:25.636529552 +0200
 @@ -65,8 +65,8 @@ target_compile_definitions(${PROJECT_NAM
  	#tell the code where the voices are located
  	PRIVATE -DBUILD_ENV_VOICES_PATH=\"${VOICES_DIR}\"
@@ -12,9 +12,9 @@ diff -up piper1-gpl-main/piper-speak/CMakeLists.txt.omv~ piper1-gpl-main/piper-s
  
  ### We still need to download a voice to use
  file(MAKE_DIRECTORY download/voices)
-diff -up piper1-gpl-main/piper-speak/piper-speak.cpp.omv~ piper1-gpl-main/piper-speak/piper-speak.cpp
---- piper1-gpl-main/piper-speak/piper-speak.cpp.omv~	2025-10-09 21:00:26.739647845 +0200
-+++ piper1-gpl-main/piper-speak/piper-speak.cpp	2025-10-09 20:59:41.008563807 +0200
+diff -up piper1-gpl-main/piper-speak/piper-speak.cpp.13~ piper1-gpl-main/piper-speak/piper-speak.cpp
+--- piper1-gpl-main/piper-speak/piper-speak.cpp.13~	2025-10-09 21:20:25.580992899 +0200
++++ piper1-gpl-main/piper-speak/piper-speak.cpp	2025-10-09 21:23:25.453283558 +0200
 @@ -10,14 +10,16 @@
  // BUILD_ENV_VOICES_PATH holds a folder which contains voices
  
@@ -76,7 +76,7 @@ diff -up piper1-gpl-main/piper-speak/piper-speak.cpp.omv~ piper1-gpl-main/piper-
          exit(1);
      }
      //this is suboptimal because perhaps the entire file doesn't fit in memory
-@@ -86,7 +109,79 @@ constexpr std::string_view help_string =
+@@ -86,7 +109,81 @@ constexpr std::string_view help_string =
  "piper-speak OR piper-speak --stdin'         reads stdin line by line\n";
  
  int main(int argc, char** argv) {
@@ -126,14 +126,16 @@ diff -up piper1-gpl-main/piper-speak/piper-speak.cpp.omv~ piper1-gpl-main/piper-
 +    if(voice_onnx_path.empty()) {
 +        if(language.empty()) {
 +            if(getenv("LC_MESSAGES"))
-+                language=getenv("LC_MESSAGES");
++                language = getenv("LC_MESSAGES");
 +            else if(getenv("LC_ALL"))
-+                language=getenv("LC_ALL");
++                language = getenv("LC_ALL");
 +            else if(getenv("LANG"))
-+                language=getenv("LANG");
++                language = getenv("LANG");
 +            else
-+                language="en_US.UTF-8";
++                language = "en_US";
 +        }
++        if(language == "C" || language.starts_with("C.")) // The POSIX C locale (and C.UTF-8 etc.) comes down to US English...
++            language = "en_US";
 +
 +        // We don't care about the charset, if given...
 +        if(language.find('.') != std::string::npos)
@@ -157,7 +159,7 @@ diff -up piper1-gpl-main/piper-speak/piper-speak.cpp.omv~ piper1-gpl-main/piper-
      std::filesystem::path voice_json_path
          = voice_onnx_path.string() + std::string(".json");
      piper_synthesizer *synth = piper_create(voice_onnx_path.c_str(),
-@@ -100,24 +195,13 @@ int main(int argc, char** argv) {
+@@ -100,24 +197,13 @@ int main(int argc, char** argv) {
      // options.length_scale = 2;
      // options.speaker_id = 5;
  
