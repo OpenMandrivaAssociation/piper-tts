@@ -1,4 +1,4 @@
-%define git 20250910
+%define git 20251112
 %define libname %mklibname piper
 %define devname %mklibname -d piper
 
@@ -40,8 +40,6 @@ libpiper-onnxruntime-1.20.1.patch
 piper-speak-compile.patch
 piper-speak-system-voices.patch
 piper-system-voices.patch
-# There's no such thing as -ac
-piper-fix-ffplay-arguments.patch
 piper-system-espeak-ng.patch
 piper-speak-improvements.patch
 
