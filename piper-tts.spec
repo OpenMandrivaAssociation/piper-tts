@@ -6,7 +6,7 @@
 
 Name:		piper-tts
 Version:	1.3.1%{?git:~%{git}}
-Release:	1
+Release:	2
 %if 0%{?git:1}
 Source0:	https://github.com/OHF-Voice/piper1-gpl/archive/refs/heads/main.tar.gz#/%{name}-%{git}.tar.gz
 %else
