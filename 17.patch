@@ -9,11 +9,6 @@ reasons.
 Using this requires espeak-ng 1.52 with the TextToPhonemesWithTerminator
 patchset applied.
 ---
- CMakeLists.txt | 178 ++++++++++++++++++++++++++++++-------------------
- 1 file changed, 109 insertions(+), 69 deletions(-)
-
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 04dd613..7374d25 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -4,94 +4,134 @@
@@ -42,7 +37,7 @@ index 04dd613..7374d25 100644
 -
 -ExternalProject_Add(espeak_ng_external
 -    GIT_REPOSITORY https://github.com/espeak-ng/espeak-ng.git
--    GIT_TAG 212928b394a96e8fd2096616bfd54e17845c48f6  # 2025-Mar-22
+-    GIT_TAG 724808c  # 2026-Apr-06
 -    PREFIX ${ESPEAKNG_BUILD_DIR}
 -    CMAKE_ARGS
 -        -DCMAKE_INSTALL_PREFIX=${ESPEAKNG_INSTALL_DIR}
@@ -141,7 +136,7 @@ index 04dd613..7374d25 100644
 +
 +    ExternalProject_Add(espeak_ng_external
 +        GIT_REPOSITORY https://github.com/espeak-ng/espeak-ng.git
-+        GIT_TAG 212928b394a96e8fd2096616bfd54e17845c48f6  # 2025-Mar-22
++        GIT_TAG 724808c  # 2026-Apr-06
 +        PREFIX ${ESPEAKNG_BUILD_DIR}
 +        CMAKE_ARGS
 +            -DCMAKE_INSTALL_PREFIX=${ESPEAKNG_INSTALL_DIR}
@@ -172,7 +167,16 @@ index 04dd613..7374d25 100644
 +    include_directories(
 +        ${ESPEAKNG_INSTALL_DIR}/include
 +    )
-+
+ 
+-# Copy espeak-ng-data
+-set(DATA_SRC ${CMAKE_BINARY_DIR}/espeak_ng-install/share/espeak-ng-data)
+-set(DATA_DST ${CMAKE_CURRENT_SOURCE_DIR}/src/piper/espeak-ng-data)
+-
+-add_custom_target(copy_espeak_ng_data ALL
+-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${DATA_SRC} ${DATA_DST}
+-    DEPENDS espeak_ng_external
+-    COMMENT "Copying espeak-ng-data after espeak-ng external project builds"
+-)
 +    add_dependencies(espeakbridge espeak_ng_external)
 +    target_link_libraries(espeakbridge PRIVATE
 +        ${ESPEAKNG_STATIC_LIB}
@@ -181,19 +185,11 @@ index 04dd613..7374d25 100644
 +    target_include_directories(espeakbridge PRIVATE
 +        ${ESPEAKNG_INSTALL_DIR}/include
 +    )
- 
--# Copy espeak-ng-data
--set(DATA_SRC ${CMAKE_BINARY_DIR}/espeak_ng-install/share/espeak-ng-data)
--set(DATA_DST ${CMAKE_CURRENT_SOURCE_DIR}/src/piper/espeak-ng-data)
++
 +    if(WIN32)
 +        # Fix dll thunk issue (__imp_SYMBOL not found)
 +        target_compile_definitions(espeakbridge PRIVATE LIBESPEAK_NG_EXPORT)
- 
--add_custom_target(copy_espeak_ng_data ALL
--    COMMAND ${CMAKE_COMMAND} -E copy_directory ${DATA_SRC} ${DATA_DST}
--    DEPENDS espeak_ng_external
--    COMMENT "Copying espeak-ng-data after espeak-ng external project builds"
--)
++
 +        # Fix .dll suffix
 +        set_target_properties(espeakbridge PROPERTIES
 +            PREFIX ""
@@ -230,14 +226,9 @@ Subject: [PATCH 2/2] Update build requirements
 - python3-dev is linked against
 - python3-venv is required to create the virtualenv as instructed
 ---
- docs/BUILDING.md | 3 +++
- 1 file changed, 3 insertions(+)
-
-diff --git a/docs/BUILDING.md b/docs/BUILDING.md
-index b3193ae..dbadebf 100644
 --- a/docs/BUILDING.md
 +++ b/docs/BUILDING.md
-@@ -6,7 +6,10 @@ You will need the following system packages installed (`apt-get`):
+@@ -6,7 +6,10 @@
  
  * `build-essential`
  * `cmake`

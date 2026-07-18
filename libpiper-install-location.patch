@@ -1,7 +1,6 @@
-diff -up piper1-gpl-main/libpiper/CMakeLists.txt.omv~ piper1-gpl-main/libpiper/CMakeLists.txt
---- piper1-gpl-main/libpiper/CMakeLists.txt.omv~	2025-10-06 02:24:37.801651116 +0200
-+++ piper1-gpl-main/libpiper/CMakeLists.txt	2025-10-06 02:29:45.818455490 +0200
-@@ -79,7 +79,7 @@ target_link_libraries(piper
+--- a/libpiper/CMakeLists.txt
++++ b/libpiper/CMakeLists.txt
+@@ -110,7 +110,7 @@
  include(GNUInstallDirs)
  
  install(TARGETS piper
@@ -10,7 +9,7 @@ diff -up piper1-gpl-main/libpiper/CMakeLists.txt.omv~ piper1-gpl-main/libpiper/C
  )
  
  install(
-@@ -89,14 +89,14 @@ install(
+@@ -120,16 +120,16 @@
  
  install(
      DIRECTORY ${ONNXRUNTIME_DIR}/lib/
@@ -28,3 +27,5 @@ diff -up piper1-gpl-main/libpiper/CMakeLists.txt.omv~ piper1-gpl-main/libpiper/C
 -    DESTINATION ${CMAKE_INSTALL_PREFIX}
 +    DESTINATION ${CMAKE_INSTALL_PREFIX}/share
  )
+ 
+ # ----------------

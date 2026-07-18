@@ -1,12 +1,12 @@
-%define git 20251112
+#define git 20251112
 %define libname %mklibname piper
 %define devname %mklibname -d piper
 
 %bcond_without clib
 
 Name:		piper-tts
-Version:	1.3.1%{?git:~%{git}}
-Release:	2
+Version:	1.5.0%{?git:~%{git}}
+Release:	1
 %if 0%{?git:1}
 Source0:	https://github.com/OHF-Voice/piper1-gpl/archive/refs/heads/main.tar.gz#/%{name}-%{git}.tar.gz
 %else
@@ -42,6 +42,7 @@ piper-speak-system-voices.patch
 piper-system-voices.patch
 piper-system-espeak-ng.patch
 piper-speak-improvements.patch
+piper-speak-last-chunk.patch
 
 %description
 A fast and local neural text-to-speech engine that embeds

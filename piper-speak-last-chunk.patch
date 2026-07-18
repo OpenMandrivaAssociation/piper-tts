@@ -1,0 +1,54 @@
+--- a/piper-speak/piper-speak.cpp
++++ b/piper-speak/piper-speak.cpp
+@@ -54,15 +54,26 @@
+     return voice_file;
+ }
+ 
+-//call afer piper_synthesize_start to play the synthesized data
++//call after piper_synthesize_start to play the synthesized data
++// Note: as of libpiper 1.5.0 the final audio chunk returns PIPER_DONE
++// (with samples filled and is_last=true). Older versions returned PIPER_OK
++// for that chunk and PIPER_DONE only on a subsequent empty call. Play any
++// chunk that has samples, and stop when is_last is set.
+ void play_piper_chunks(piper_synthesizer* synth,
+     const piper_synthesize_options& options) {
+-    piper_audio_chunk chunk;
+-    while (piper_synthesize_next(synth, &chunk) != PIPER_DONE) {
+-        //set to seem like a good volume for piper's output
+-        constexpr float volume = 1.5;
+-        play_audio(chunk.samples, chunk.num_samples, volume);
+-    }
++    piper_audio_chunk chunk{};
++    do {
++        int rc = piper_synthesize_next(synth, &chunk);
++        if (rc != PIPER_OK && rc != PIPER_DONE) {
++            std::cerr << "piper synthesis failed with code " << rc << std::endl;
++            break;
++        }
++        if (chunk.samples && chunk.num_samples > 0) {
++            // slightly boost volume for typical piper output levels
++            constexpr float volume = 1.5f;
++            play_audio(chunk.samples, chunk.num_samples, volume);
++        }
++    } while (!chunk.is_last);
+ }
+ 
+ void read_string(piper_synthesizer* synth,
+--- a/piper-speak/audio.cpp
++++ b/piper-speak/audio.cpp
+@@ -21,10 +21,13 @@
+ }
+ 
+ void play_audio(const float * in_data, size_t num_samples, float volume) {
+-    //convert to signed 16bit intergers
++    // convert to signed 16-bit integers, clamping to avoid wraparound
+     int16_t cast_data[num_samples];
+     for (size_t i = 0; i < num_samples; ++i) {
+-        cast_data[i] = static_cast<int16_t>(in_data[i] * float{INT16_MAX});
++        float sample = in_data[i] * volume;
++        if (sample > 1.0f) sample = 1.0f;
++        if (sample < -1.0f) sample = -1.0f;
++        cast_data[i] = static_cast<int16_t>(sample * float{INT16_MAX});
+     }
+     //we convert to 16bit integers because that is what espeak-ng uses with pcaudiolib
+     //so it is presumably widely supported

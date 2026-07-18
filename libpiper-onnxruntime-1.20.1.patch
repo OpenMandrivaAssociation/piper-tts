@@ -1,7 +1,6 @@
-diff -up piper1-gpl-main/libpiper/src/piper.cpp.omv~ piper1-gpl-main/libpiper/src/piper.cpp
---- piper1-gpl-main/libpiper/src/piper.cpp.omv~	2025-10-06 21:42:04.130291065 +0200
-+++ piper1-gpl-main/libpiper/src/piper.cpp	2025-10-06 21:46:18.208496182 +0200
-@@ -340,12 +340,13 @@ int piper_synthesize_next(struct piper_s
+--- a/libpiper/src/piper.cpp
++++ b/libpiper/src/piper.cpp
+@@ -365,12 +365,13 @@
                                                 "scales", "sid"};
  
      // Get all output names

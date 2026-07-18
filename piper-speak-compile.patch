@@ -1,7 +1,6 @@
-diff -up piper1-gpl-main/piper-speak/CMakeLists.txt.omv~ piper1-gpl-main/piper-speak/CMakeLists.txt
---- piper1-gpl-main/piper-speak/CMakeLists.txt.omv~	2025-10-06 22:45:32.396624050 +0200
-+++ piper1-gpl-main/piper-speak/CMakeLists.txt	2025-10-06 22:49:56.821079320 +0200
-@@ -4,13 +4,13 @@ project(piper-speak LANGUAGES CXX)
+--- a/piper-speak/CMakeLists.txt
++++ b/piper-speak/CMakeLists.txt
+@@ -4,13 +4,13 @@
  
  set(SOURCE_FILES piper-speak.cpp audio.cpp)
  
@@ -18,7 +17,7 @@ diff -up piper1-gpl-main/piper-speak/CMakeLists.txt.omv~ piper1-gpl-main/piper-s
  set(ESPEAK_NG_DATA=${LIBPIPER_DIR}/espeak-ng-data/)
  
  #We also need the path to the voices: the .onnx and the .onnx.json
-@@ -56,7 +56,7 @@ find_path(PCAUDIO_INCLUDE
+@@ -56,7 +56,7 @@
  add_executable(${PROJECT_NAME} ${SOURCE_FILES})
  target_include_directories(${PROJECT_NAME} PRIVATE ${PIPER_HEADER})
  target_include_directories(${PROJECT_NAME} PRIVATE ${PCAUDIO_INCLUDE})

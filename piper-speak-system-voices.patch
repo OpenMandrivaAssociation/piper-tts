@@ -1,7 +1,6 @@
-diff -up piper1-gpl-main/piper-speak/CMakeLists.txt.omv~ piper1-gpl-main/piper-speak/CMakeLists.txt
---- piper1-gpl-main/piper-speak/CMakeLists.txt.omv~	2025-10-06 22:54:36.376452455 +0200
-+++ piper1-gpl-main/piper-speak/CMakeLists.txt	2025-10-06 22:55:18.909447950 +0200
-@@ -11,10 +11,10 @@ set(PIPER_HEADER ${LIBPIPER_DIR}/../incl
+--- a/piper-speak/CMakeLists.txt
++++ b/piper-speak/CMakeLists.txt
+@@ -11,10 +11,10 @@
  #libpiper is inside the root of LIBPIPER_DIR already
  #so no need for seperate variable
  set(ONNX_LIB_DIR /usr/lib64)
@@ -14,7 +13,7 @@ diff -up piper1-gpl-main/piper-speak/CMakeLists.txt.omv~ piper1-gpl-main/piper-s
  
  ### Actually find the libraries
  
-@@ -61,7 +61,7 @@ target_link_libraries(${PROJECT_NAME} PR
+@@ -61,7 +61,7 @@
  target_link_libraries(${PROJECT_NAME} PRIVATE ${PCAUDIO_LIB})
  target_compile_definitions(${PROJECT_NAME}
  	#tell the code where ESPEAK_NG_DATA is located
